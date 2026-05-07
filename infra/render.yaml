@@ -1,11 +1,11 @@
 services:
   - type: web
     name: captura-camera-api
-    runtime: python
-    plan: starter
+    env: python
     region: oregon
+    plan: starter
     rootDir: .
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install -r [requirements.txt](http://_vscodecontentref_/0)
     startCommand: >
       bash -lc 'mkdir -p /var/data/uploads &&
       ln -sfn /var/data/uploads /opt/render/project/src/uploads &&
@@ -22,16 +22,14 @@ services:
 
   - type: web
     name: captura-camera-frontend
+    env: static
     rootDir: .
     buildCommand: >
       bash -lc 'mkdir -p dist &&
       cp -R frontend/* dist/ &&
-      sed -i "s|^const API_BASE_URL = .*|const API_BASE_URL = \"${FRONTEND_API_BASE_URL}\";|" dist/app.js'
+      sed -i "s|^const API_BASE_URL = .*|const API_BASE_URL = \"https://captura-camera-api.onrender.com\";|" dist/app.js'
     staticPublishPath: dist
     autoDeploy: true
-    envVars:
-      - key: FRONTEND_API_BASE_URL
-        value: https://captura-camera-api.onrender.com
     routes:
       - type: rewrite
         source: /*
