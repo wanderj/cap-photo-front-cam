@@ -20,7 +20,7 @@ services:
       mountPath: /var/data
       sizeGB: 1
 
-  - type: static
+  - type: web
     name: captura-camera-frontend
     rootDir: .
     buildCommand: >
