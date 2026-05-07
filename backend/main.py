@@ -19,8 +19,8 @@ app = FastAPI(title="Secure Camera Capture API", version="1.0.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://sdss.pythonanywhere.com",
-        "https://www.sdssds.pythonanywhere.com",
+        "https://cap-photo-front-cam.onrender.com",
+        "https://www.cap-photo-front-cam.onrender.com",
         "http://localhost:5500",
         "http://127.0.0.1:5500",
         "http://localhost:8080",
