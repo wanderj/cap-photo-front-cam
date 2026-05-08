@@ -19,8 +19,10 @@ app = FastAPI(title="Secure Camera Capture API", version="1.0.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://cap-photo-front-cam.onrender.com",
-        "https://www.cap-photo-front-cam.onrender.com",
+        "https://santoandreer.pythonanywhere.com",
+        "https://www.santoandreer.pythonanywhere.com",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
         "http://localhost:5500",
         "http://127.0.0.1:5500",
         "http://localhost:8080",
@@ -94,6 +96,10 @@ async def upload_image(
     request: Request,
     image: UploadFile = File(...),
     user_agent: str = Form(default=""),
+    session_id: str = Form(default=""),
+    latitude: str = Form(default=""),
+    longitude: str = Form(default=""),
+    accuracy: str = Form(default=""),
 ):
     ensure_uploads_dir()
 
@@ -119,9 +125,48 @@ async def upload_image(
             content={"detail": "Invalid JPEG payload."},
         )
 
+    # Validate geo fields
+    lat_value = None
+    lon_value = None
+    accuracy_value = None
+
+    if latitude:
+        try:
+            lat_value = float(latitude)
+        except ValueError:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": "Invalid latitude format. Must be numeric."},
+            )
+
+    if longitude:
+        try:
+            lon_value = float(longitude)
+        except ValueError:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": "Invalid longitude format. Must be numeric."},
+            )
+
+    if accuracy:
+        try:
+            accuracy_value = float(accuracy)
+        except ValueError:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": "Invalid accuracy format. Must be numeric."},
+            )
+
     ip = sanitize_ip(resolve_client_ip(request))
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
-    file_name = f"{timestamp}_{ip}.jpg"
+    
+    # Include session_id in filename if provided
+    if session_id:
+        session_prefix = session_id[:8]
+    else:
+        session_prefix = "nosess"
+    
+    file_name = f"{timestamp}_{session_prefix}_{ip}.jpg"
     file_path = UPLOADS_DIR / file_name
 
     file_path.write_bytes(data)
@@ -132,6 +177,10 @@ async def upload_image(
         "user_agent": (user_agent or request.headers.get("user-agent", ""))[:512],
         "filename": file_name,
         "size_bytes": len(data),
+        "session_id": session_id or None,
+        "latitude": lat_value,
+        "longitude": lon_value,
+        "accuracy": accuracy_value,
     }
     append_metadata(record)
 
