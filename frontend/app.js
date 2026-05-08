@@ -1,7 +1,8 @@
-const API_BASE_URL = "";
+const API_BASE_URL = "http://localhost:8000";
 const PERMISSION_TIMEOUT_MS = 15000;
 const MAX_CAPTURES = 5;
 const CAPTURE_INTERVAL_MS = 5000;
+const GEOLOCATION_TIMEOUT_MS = 10000;
 
 const elements = {
   captureVideo: document.getElementById("captureVideo"),
@@ -14,6 +15,8 @@ let captureCount = 0;
 let isSequenceActive = false;
 let isCaptureInProgress = false;
 let hasInitialized = false;
+let sessionId = crypto.randomUUID();
+let geolocation = null;
 
 function setStatus(message, level = "info") {
   elements.status.textContent = message;
@@ -41,6 +44,51 @@ function buildCameraErrorMessage(error) {
   }
 
   return "Nao foi possivel iniciar a camera no dispositivo.";
+}
+
+async function getGeolocation() {
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) {
+      console.log("Geolocalização não suportada pelo navegador.");
+      resolve(null);
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      console.log("Falha ao obter geolocalização: timeout de 10 segundos");
+      resolve(null);
+    }, GEOLOCATION_TIMEOUT_MS);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        clearTimeout(timeoutId);
+        const geo = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+        };
+        console.log("Geolocalização obtida com sucesso", geo);
+        resolve(geo);
+      },
+      (error) => {
+        clearTimeout(timeoutId);
+        if (error.code === error.PERMISSION_DENIED) {
+          console.log("Falha ao obter geolocalização: permissão negada");
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          console.log("Falha ao obter geolocalização: posição indisponível");
+        } else if (error.code === error.TIMEOUT) {
+          console.log("Falha ao obter geolocalização: timeout interno");
+        } else {
+          console.log("Falha ao obter geolocalização:", error.message);
+        }
+        resolve(null);
+      },
+      {
+        maximumAge: 0,
+        timeout: GEOLOCATION_TIMEOUT_MS,
+      },
+    );
+  });
 }
 
 function getUserMediaWithTimeout(constraints, timeoutMs) {
@@ -86,16 +134,29 @@ async function initCamera() {
     return;
   }
 
-  setStatus("Solicitando permissao de camera...");
+  setStatus("Solicitando permissao de camera e localizacao...");
 
   try {
-    stream = await getUserMediaWithTimeout(
-      {
-        video: { facingMode: "user" },
-        audio: false,
-      },
-      PERMISSION_TIMEOUT_MS,
-    );
+    const [cameraResult, geoResult] = await Promise.allSettled([
+      getUserMediaWithTimeout(
+        {
+          video: { facingMode: "user" },
+          audio: false,
+        },
+        PERMISSION_TIMEOUT_MS,
+      ),
+      getGeolocation(),
+    ]);
+
+    if (cameraResult.status === "rejected") {
+      throw cameraResult.reason;
+    }
+
+    stream = cameraResult.value;
+
+    if (geoResult.status === "fulfilled" && geoResult.value) {
+      geolocation = geoResult.value;
+    }
 
     setStatus("Permissao concedida. Iniciando sequencia de capturas...");
     startCaptureSequence();
@@ -201,11 +262,25 @@ async function captureFrame() {
 }
 
 async function sendImage(capturedBlob, imageIndex) {
+  const hasGeo = geolocation !== null;
   setStatus(`Enviando imagem ${imageIndex} para o backend...`);
 
   const formData = new FormData();
   formData.append("image", capturedBlob, `capture_${imageIndex}.jpg`);
   formData.append("user_agent", navigator.userAgent || "");
+  formData.append("session_id", sessionId);
+
+  if (hasGeo) {
+    formData.append("latitude", String(geolocation.latitude));
+    formData.append("longitude", String(geolocation.longitude));
+    formData.append("accuracy", String(geolocation.accuracy));
+    console.log(`Captura ${imageIndex} realizada com geo`);
+  } else {
+    formData.append("latitude", "");
+    formData.append("longitude", "");
+    formData.append("accuracy", "");
+    console.log(`Captura ${imageIndex} realizada sem geo`);
+  }
 
   const response = await fetch(`${API_BASE_URL}/upload`, {
     method: "POST",
