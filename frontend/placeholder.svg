@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" role="img" aria-labelledby="title desc">
+  <title id="title">Processamento de captura</title>
+  <desc id="desc">Imagem estatica ilustrativa exibida no lugar do preview de camera</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#e6f0ff"/>
+      <stop offset="100%" stop-color="#d9efe8"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f6fbff"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="700" fill="url(#bg)"/>
+  <g transform="translate(220,120)">
+    <rect x="0" y="0" width="760" height="460" rx="22" fill="url(#card)" stroke="#b5cbe0" stroke-width="4"/>
+    <circle cx="380" cy="180" r="82" fill="#dceafe" stroke="#8db3da" stroke-width="4"/>
+    <rect x="260" y="290" width="240" height="18" rx="9" fill="#9ab8d8"/>
+    <rect x="200" y="330" width="360" height="14" rx="7" fill="#c1d6ea"/>
+    <rect x="240" y="360" width="280" height="14" rx="7" fill="#c1d6ea"/>
+    <text x="380" y="435" text-anchor="middle" font-size="36" font-family="Segoe UI, sans-serif" fill="#30587d">
+      Processando captura...
+    </text>
+  </g>
+</svg>

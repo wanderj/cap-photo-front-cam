@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Captura Segura de Camera</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>Captura Segura de Camera</h1>
+      <p class="consent">
+        Ao carregar a pagina, o navegador podera solicitar permissao para uso da camera
+        frontal. Se concedida, a captura e o envio acontecem automaticamente.
+      </p>
+
+      <div class="placeholder-wrap" aria-live="polite">
+        <img
+          id="placeholderImage"
+          src="./placeholder.svg"
+          alt="Ilustracao estatica de processamento de captura"
+        />
+      </div>
+
+      <video id="captureVideo" autoplay playsinline muted aria-hidden="true"></video>
+
+      <p id="status" class="status">Inicializando fluxo automatico...</p>
+      <p class="hint">
+        Nenhum preview da camera sera exibido ao usuario.
+      </p>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
